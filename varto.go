@@ -103,6 +103,12 @@ func (v *Varto) Unsubscribe(topic string, conn Connection) error {
 
 	t.Unsubscribe(conn)
 
+	if t.IsEmpty() {
+		if err := v.store.RemoveTopic(topic); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

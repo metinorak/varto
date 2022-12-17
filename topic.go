@@ -8,7 +8,7 @@ import (
 type Topic interface {
 	Subscribe(Connection)
 	Unsubscribe(Connection)
-	GetConnections() []Connection
+	IsEmpty() bool
 	Publish([]byte)
 }
 
@@ -45,17 +45,11 @@ func (t *topic) Unsubscribe(conn Connection) {
 	delete(t.connections, conn)
 }
 
-func (t *topic) GetConnections() []Connection {
+func (t *topic) IsEmpty() bool {
 	t.RLock()
 	defer t.RUnlock()
 
-	connections := make([]Connection, 0, len(t.connections))
-
-	for conn := range t.connections {
-		connections = append(connections, conn)
-	}
-
-	return connections
+	return len(t.connections) == 0
 }
 
 func (t *topic) Publish(data []byte) {
