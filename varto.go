@@ -2,17 +2,42 @@ package varto
 
 import "sync"
 
+// If this is not provided, default options will be used.
+type Options struct {
+	// AllowedTopics is a list of topics that are allowed to be subscribed.
+	// If this list is empty, all topics are allowed.
+	AllowedTopics []string
+}
+
 // Varto is the main struct of the package.
 type Varto struct {
 	sync.RWMutex
-	store *inMemoryStore
+	store         *inMemoryStore
+	opts          *Options
+	allowedTopics map[string]bool
 }
 
 // New returns a new Varto instance.
-func New() *Varto {
-	return &Varto{
+// If opts is nil, default options will be used.
+func New(opts *Options) *Varto {
+	v := &Varto{
 		store: newInMemoryStore(),
 	}
+
+	if opts == nil {
+		v.opts = &Options{}
+	} else {
+		v.opts = opts
+	}
+
+	if len(v.opts.AllowedTopics) > 0 {
+		v.allowedTopics = make(map[string]bool)
+		for _, topic := range v.opts.AllowedTopics {
+			v.allowedTopics[topic] = true
+		}
+	}
+
+	return v
 }
 
 func (v *Varto) AddConnection(conn Connection) error {
@@ -44,6 +69,12 @@ func (v *Varto) Subscribe(topicName string, conn Connection) error {
 
 	if topicName == "" {
 		return ErrInvalidTopicName
+	}
+
+	if v.allowedTopics != nil {
+		if _, ok := v.allowedTopics[topicName]; !ok {
+			return ErrTopicIsNotAllowed
+		}
 	}
 
 	topic, err := v.store.GetTopic(topicName)
