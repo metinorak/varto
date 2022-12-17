@@ -26,6 +26,10 @@ func (v *Varto) RemoveConnection(conn Connection) error {
 	v.Lock()
 	defer v.Unlock()
 
+	for _, topic := range v.store.topics {
+		topic.Unsubscribe(conn)
+	}
+
 	return v.store.RemoveConnection(conn)
 }
 

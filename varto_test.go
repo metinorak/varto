@@ -22,6 +22,7 @@ func TestAddConnection(t *testing.T) {
 	t.Run("TestAddConnection_WhenCall_ThenReturnNil", func(t *testing.T) {
 		v := varto.New()
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+		mockConnection.EXPECT().GetId().Return("id")
 
 		err := v.AddConnection(mockConnection)
 		assert.Nil(t, err)
@@ -32,6 +33,7 @@ func TestRemoveConnection(t *testing.T) {
 	t.Run("TestRemoveConnection_WhenCall_ThenReturnNil", func(t *testing.T) {
 		v := varto.New()
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+		mockConnection.EXPECT().GetId().Return("id").AnyTimes()
 
 		v.AddConnection(mockConnection)
 		err := v.RemoveConnection(mockConnection)
@@ -93,6 +95,7 @@ func TestBroadcastToAll(t *testing.T) {
 		v := varto.New()
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
 		mockConnection.EXPECT().Write(gomock.Any()).Return(nil)
+		mockConnection.EXPECT().GetId().Return("id")
 
 		v.AddConnection(mockConnection)
 		err := v.BroadcastToAll([]byte("data"))
@@ -103,6 +106,7 @@ func TestBroadcastToAll(t *testing.T) {
 		v := varto.New()
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
 		mockConnection.EXPECT().Write(gomock.Any()).Return(fmt.Errorf("error"))
+		mockConnection.EXPECT().GetId().Return("id")
 
 		v.AddConnection(mockConnection)
 		err := v.BroadcastToAll([]byte("data"))

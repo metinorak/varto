@@ -4,13 +4,13 @@ import "sync"
 
 type inMemoryStore struct {
 	sync.RWMutex
-	connections map[Connection]bool
+	connections map[string]Connection
 	topics      map[string]Topic
 }
 
 func newInMemoryStore() *inMemoryStore {
 	return &inMemoryStore{
-		connections: make(map[Connection]bool),
+		connections: make(map[string]Connection),
 		topics:      make(map[string]Topic),
 	}
 }
@@ -47,7 +47,7 @@ func (s *inMemoryStore) AddConnection(conn Connection) error {
 	s.Lock()
 	defer s.Unlock()
 
-	s.connections[conn] = true
+	s.connections[conn.GetId()] = conn
 
 	return nil
 }
@@ -56,7 +56,7 @@ func (s *inMemoryStore) RemoveConnection(conn Connection) error {
 	s.Lock()
 	defer s.Unlock()
 
-	delete(s.connections, conn)
+	delete(s.connections, conn.GetId())
 
 	for _, topic := range s.topics {
 		topic.Unsubscribe(conn)
@@ -72,7 +72,7 @@ func (s *inMemoryStore) GetAllConnections() ([]Connection, error) {
 	var connections []Connection
 
 	for conn := range s.connections {
-		connections = append(connections, conn)
+		connections = append(connections, s.connections[conn])
 	}
 
 	return connections, nil
