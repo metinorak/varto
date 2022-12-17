@@ -9,6 +9,10 @@ type Options struct {
 	AllowedTopics []string
 }
 
+func getDefaultOptions() *Options {
+	return &Options{}
+}
+
 // Varto is the main struct of the package.
 type Varto struct {
 	sync.RWMutex
@@ -25,7 +29,7 @@ func New(opts *Options) *Varto {
 	}
 
 	if opts == nil {
-		v.opts = &Options{}
+		v.opts = getDefaultOptions()
 	} else {
 		v.opts = opts
 	}
