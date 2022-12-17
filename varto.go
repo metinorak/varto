@@ -19,6 +19,10 @@ func (v *Varto) AddConnection(conn Connection) error {
 	v.Lock()
 	defer v.Unlock()
 
+	if conn == nil {
+		return ErrNilConnection
+	}
+
 	return v.store.AddConnection(conn)
 }
 
@@ -37,6 +41,10 @@ func (v *Varto) RemoveConnection(conn Connection) error {
 func (v *Varto) Subscribe(topicName string, conn Connection) error {
 	v.Lock()
 	defer v.Unlock()
+
+	if topicName == "" {
+		return ErrInvalidTopicName
+	}
 
 	topic, err := v.store.GetTopic(topicName)
 	if err == ErrTopicNotFound {

@@ -27,6 +27,12 @@ func TestAddConnection(t *testing.T) {
 		err := v.AddConnection(mockConnection)
 		assert.Nil(t, err)
 	})
+
+	t.Run("TestAddConnection_WhenConnectionIsNil_ThenReturnError", func(t *testing.T) {
+		v := varto.New()
+		err := v.AddConnection(nil)
+		assert.Equal(t, varto.ErrNilConnection, err)
+	})
 }
 
 func TestRemoveConnection(t *testing.T) {
@@ -48,6 +54,14 @@ func TestSubscribe(t *testing.T) {
 
 		err := v.Subscribe("topic", mockConnection)
 		assert.Nil(t, err)
+	})
+
+	t.Run("TestSubscribe_WhenTopicNameIsEmpty_ThenReturnError", func(t *testing.T) {
+		v := varto.New()
+		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+
+		err := v.Subscribe("", mockConnection)
+		assert.Equal(t, varto.ErrInvalidTopicName, err)
 	})
 }
 
@@ -91,7 +105,7 @@ func TestPublish(t *testing.T) {
 }
 
 func TestBroadcastToAll(t *testing.T) {
-	t.Run("TestBroadcastToAll_WhenWriteSuccessful_ThenReturnNil", func(t *testing.T) {
+	t.Run("TestBroadcastToAll_WhenWriteSucceeds_ThenReturnNil", func(t *testing.T) {
 		v := varto.New()
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
 		mockConnection.EXPECT().Write(gomock.Any()).Return(nil)
