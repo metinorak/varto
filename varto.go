@@ -16,16 +16,18 @@ func getDefaultOptions() *Options {
 // Varto is the main struct of the package.
 type Varto struct {
 	sync.RWMutex
-	store         *inMemoryStore
-	opts          *Options
-	allowedTopics map[string]bool
+	store             *inMemoryStore
+	opts              *Options
+	allowedTopics     map[string]bool
+	middlewareContext *middlewareContext
 }
 
 // New returns a new Varto instance.
 // If opts is nil, default options will be used.
 func New(opts *Options) *Varto {
 	v := &Varto{
-		store: newInMemoryStore(),
+		store:             newInMemoryStore(),
+		middlewareContext: newMiddlewareContext(),
 	}
 
 	if opts == nil {
@@ -44,12 +46,27 @@ func New(opts *Options) *Varto {
 	return v
 }
 
+// Use adds a middleware to the middleware chain.
+func (v *Varto) Use(middleware Middleware) {
+	if middleware == nil {
+		return
+	}
+
+	v.middlewareContext.Add(middleware)
+}
+
 func (v *Varto) AddConnection(conn Connection) error {
 	v.Lock()
 	defer v.Unlock()
 
 	if conn == nil {
 		return ErrNilConnection
+	}
+
+	for _, m := range v.middlewareContext.GetAll() {
+		if err := m.OnAddConnection(conn); err != nil {
+			return err
+		}
 	}
 
 	return v.store.AddConnection(conn)
@@ -59,6 +76,16 @@ func (v *Varto) RemoveConnection(conn Connection) error {
 	v.Lock()
 	defer v.Unlock()
 
+	if conn == nil {
+		return ErrNilConnection
+	}
+
+	for _, m := range v.middlewareContext.GetAll() {
+		if err := m.OnRemoveConnection(conn); err != nil {
+			return err
+		}
+	}
+
 	for _, topic := range v.store.topics {
 		topic.Unsubscribe(conn)
 	}
@@ -67,12 +94,22 @@ func (v *Varto) RemoveConnection(conn Connection) error {
 }
 
 // Subscribe subscribes a connection to a topic.
-func (v *Varto) Subscribe(topicName string, conn Connection) error {
+func (v *Varto) Subscribe(conn Connection, topicName string) error {
 	v.Lock()
 	defer v.Unlock()
 
 	if topicName == "" {
 		return ErrInvalidTopicName
+	}
+
+	if conn == nil {
+		return ErrNilConnection
+	}
+
+	for _, m := range v.middlewareContext.GetAll() {
+		if err := m.OnSubscribe(conn, topicName); err != nil {
+			return err
+		}
 	}
 
 	if v.allowedTopics != nil {
@@ -96,9 +133,23 @@ func (v *Varto) Subscribe(topicName string, conn Connection) error {
 	return nil
 }
 
-func (v *Varto) Unsubscribe(topic string, conn Connection) error {
+func (v *Varto) Unsubscribe(conn Connection, topic string) error {
 	v.Lock()
 	defer v.Unlock()
+
+	if topic == "" {
+		return ErrInvalidTopicName
+	}
+
+	if conn == nil {
+		return ErrNilConnection
+	}
+
+	for _, m := range v.middlewareContext.GetAll() {
+		if err := m.OnUnsubscribe(conn, topic); err != nil {
+			return err
+		}
+	}
 
 	t, err := v.store.GetTopic(topic)
 	if err != nil {
@@ -118,6 +169,16 @@ func (v *Varto) Unsubscribe(topic string, conn Connection) error {
 
 // Publish publishes data to a topic.
 func (v *Varto) Publish(topic string, data []byte) error {
+	if topic == "" {
+		return ErrInvalidTopicName
+	}
+
+	for _, m := range v.middlewareContext.GetAll() {
+		if err := m.OnPublish(topic, data); err != nil {
+			return err
+		}
+	}
+
 	t, err := v.store.GetTopic(topic)
 	if err != nil {
 		return err
@@ -129,6 +190,12 @@ func (v *Varto) Publish(topic string, data []byte) error {
 
 // BroadcastToAll broadcasts data to all connections.
 func (v *Varto) BroadcastToAll(data []byte) error {
+	for _, m := range v.middlewareContext.GetAll() {
+		if err := m.OnBroadcastToAll(data); err != nil {
+			return err
+		}
+	}
+
 	connections, err := v.store.GetAllConnections()
 	if err != nil {
 		return err
