@@ -74,6 +74,19 @@ func TestSubscribe(t *testing.T) {
 		err := v.Subscribe("topic2", mockConnection)
 		assert.Equal(t, varto.ErrTopicIsNotAllowed, err)
 	})
+
+	t.Run("TestSubscribe_WhenSuccessfullySubscribed_ThenShouldPublish", func(t *testing.T) {
+		v := varto.New(nil)
+		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+		mockConnection.EXPECT().Write([]byte("data")).Return(nil)
+		mockConnection.EXPECT().GetId().Return("id").AnyTimes()
+
+		v.Subscribe("topic", mockConnection)
+		err := v.Publish("topic", []byte("data"))
+
+		time.Sleep(10 * time.Millisecond)
+		assert.Nil(t, err)
+	})
 }
 
 func TestUnsubscribe(t *testing.T) {
@@ -93,6 +106,19 @@ func TestUnsubscribe(t *testing.T) {
 		mockConnection.EXPECT().GetId().Return("id").AnyTimes()
 
 		err := v.Unsubscribe("topic", mockConnection)
+		assert.Equal(t, varto.ErrTopicNotFound, err)
+	})
+
+	t.Run("TestUnsubscribe_WhenSuccessfullyUnsubscribed_ThenShouldNotPublish", func(t *testing.T) {
+		v := varto.New(nil)
+		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+		mockConnection.EXPECT().GetId().Return("id").AnyTimes()
+		mockConnection.EXPECT().Write(gomock.Any()).Times(0)
+
+		v.Subscribe("topic", mockConnection)
+		v.Unsubscribe("topic", mockConnection)
+		err := v.Publish("topic", []byte("data"))
+
 		assert.Equal(t, varto.ErrTopicNotFound, err)
 	})
 }
