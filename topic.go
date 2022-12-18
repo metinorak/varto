@@ -15,14 +15,14 @@ type Topic interface {
 type topic struct {
 	sync.RWMutex
 	name        string
-	connections map[Connection]bool
+	connections map[string]Connection
 	Channel     chan []byte
 }
 
 func NewTopic(name string) Topic {
 	t := &topic{
 		name:        name,
-		connections: make(map[Connection]bool),
+		connections: make(map[string]Connection),
 		Channel:     make(chan []byte, 100),
 	}
 
@@ -35,14 +35,14 @@ func (t *topic) Subscribe(conn Connection) {
 	t.Lock()
 	defer t.Unlock()
 
-	t.connections[conn] = true
+	t.connections[conn.GetId()] = conn
 }
 
 func (t *topic) Unsubscribe(conn Connection) {
 	t.Lock()
 	defer t.Unlock()
 
-	delete(t.connections, conn)
+	delete(t.connections, conn.GetId())
 }
 
 func (t *topic) IsEmpty() bool {
@@ -72,7 +72,7 @@ func (t *topic) publish(data []byte) error {
 	wg := sync.WaitGroup{}
 	chErr := make(chan error)
 
-	for conn := range connections {
+	for _, conn := range connections {
 		wg.Add(1)
 
 		go func(c Connection) {

@@ -53,6 +53,7 @@ func TestSubscribe(t *testing.T) {
 	t.Run("TestSubscribe_WhenCall_ThenReturnNil", func(t *testing.T) {
 		v := varto.New(nil)
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+		mockConnection.EXPECT().GetId().Return("id")
 
 		err := v.Subscribe("topic", mockConnection)
 		assert.Nil(t, err)
@@ -79,6 +80,7 @@ func TestUnsubscribe(t *testing.T) {
 	t.Run("TestUnsubscribe_WhenTopicExists_ThenReturnNil", func(t *testing.T) {
 		v := varto.New(nil)
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+		mockConnection.EXPECT().GetId().Return("id").AnyTimes()
 
 		v.Subscribe("topic", mockConnection)
 		err := v.Unsubscribe("topic", mockConnection)
@@ -88,6 +90,7 @@ func TestUnsubscribe(t *testing.T) {
 	t.Run("TestUnsubscribe_WhenTopicDoesNotExist_ThenReturnError", func(t *testing.T) {
 		v := varto.New(nil)
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
+		mockConnection.EXPECT().GetId().Return("id").AnyTimes()
 
 		err := v.Unsubscribe("topic", mockConnection)
 		assert.Equal(t, varto.ErrTopicNotFound, err)
@@ -99,6 +102,7 @@ func TestPublish(t *testing.T) {
 		v := varto.New(nil)
 		mockConnection := mock.NewMockConnection(gomock.NewController(t))
 		mockConnection.EXPECT().Write([]byte("data")).Return(nil)
+		mockConnection.EXPECT().GetId().Return("id").AnyTimes()
 
 		v.Subscribe("topic", mockConnection)
 		err := v.Publish("topic", []byte("data"))
