@@ -15,7 +15,6 @@ func getDefaultOptions() *Options {
 
 // Varto is the main struct of the package.
 type Varto struct {
-	sync.RWMutex
 	store             *inMemoryStore
 	opts              *Options
 	allowedTopics     map[string]bool
@@ -56,9 +55,6 @@ func (v *Varto) Use(middleware Middleware) {
 }
 
 func (v *Varto) AddConnection(conn Connection) error {
-	v.Lock()
-	defer v.Unlock()
-
 	if conn == nil {
 		return ErrNilConnection
 	}
@@ -73,9 +69,6 @@ func (v *Varto) AddConnection(conn Connection) error {
 }
 
 func (v *Varto) RemoveConnection(conn Connection) error {
-	v.Lock()
-	defer v.Unlock()
-
 	if conn == nil {
 		return ErrNilConnection
 	}
@@ -95,9 +88,6 @@ func (v *Varto) RemoveConnection(conn Connection) error {
 
 // Subscribe subscribes a connection to a topic.
 func (v *Varto) Subscribe(conn Connection, topicName string) error {
-	v.Lock()
-	defer v.Unlock()
-
 	if topicName == "" {
 		return ErrInvalidTopicName
 	}
@@ -134,9 +124,6 @@ func (v *Varto) Subscribe(conn Connection, topicName string) error {
 }
 
 func (v *Varto) Unsubscribe(conn Connection, topic string) error {
-	v.Lock()
-	defer v.Unlock()
-
 	if topic == "" {
 		return ErrInvalidTopicName
 	}
