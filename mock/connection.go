@@ -47,6 +47,21 @@ func (mr *MockConnectionMockRecorder) GetId() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetId", reflect.TypeOf((*MockConnection)(nil).GetId))
 }
 
+// Read mocks base method.
+func (m *MockConnection) Read() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Read")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Read indicates an expected call of Read.
+func (mr *MockConnectionMockRecorder) Read() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockConnection)(nil).Read))
+}
+
 // Write mocks base method.
 func (m *MockConnection) Write(arg0 []byte) error {
 	m.ctrl.T.Helper()
