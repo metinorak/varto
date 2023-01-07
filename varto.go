@@ -79,10 +79,6 @@ func (v *Varto) RemoveConnection(conn Connection) error {
 		}
 	}
 
-	for _, topic := range v.store.topics {
-		topic.Unsubscribe(conn)
-	}
-
 	return v.store.RemoveConnection(conn)
 }
 
