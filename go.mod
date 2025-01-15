@@ -1,8 +1,6 @@
 module github.com/metinorak/varto
 
-go 1.22
-
-toolchain go1.23.4
+go 1.23.4
 
 require (
 	github.com/stretchr/testify v1.9.0
