@@ -2,6 +2,16 @@ package varto
 
 import "sync"
 
+// Store defines the interface for different store implementations
+type Store interface {
+	AddConnection(conn Connection) error
+	RemoveConnection(conn Connection) error
+	GetAllConnections() ([]Connection, error)
+	AddTopic(name string) (Topic, error)
+	GetTopic(name string) (Topic, error)
+	RemoveTopic(name string) error
+}
+
 type inMemoryStore struct {
 	sync.RWMutex
 	connections map[string]Connection

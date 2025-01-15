@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/metinorak/varto"
 	"github.com/metinorak/varto/mock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNew(t *testing.T) {
@@ -273,5 +273,79 @@ func TestBroadcastToAll(t *testing.T) {
 
 		err := v.BroadcastToAll([]byte("data"))
 		assert.NotNil(t, err)
+	})
+}
+
+func TestCustomStore(t *testing.T) {
+	t.Run("TestCustomStore_WhenCreatedWithCustomStore_ThenShouldUseIt", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock.NewMockStore(ctrl)
+		mockConn := mock.NewMockConnection(ctrl)
+		mockConn.EXPECT().GetId().Return("id").AnyTimes()
+		mockStore.EXPECT().AddConnection(mockConn).Return(nil)
+
+		v := varto.NewWithStore(nil, mockStore)
+		err := v.AddConnection(mockConn)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("TestCustomStore_WhenSubscribingToTopic_ThenShouldUseCustomStore", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock.NewMockStore(ctrl)
+		mockConn := mock.NewMockConnection(ctrl)
+		mockTopic := mock.NewMockTopic(ctrl)
+
+		mockConn.EXPECT().GetId().Return("id").AnyTimes()
+		mockStore.EXPECT().GetTopic("test-topic").Return(nil, varto.ErrTopicNotFound)
+		mockStore.EXPECT().AddTopic("test-topic").Return(mockTopic, nil)
+		mockTopic.EXPECT().Subscribe(mockConn)
+
+		v := varto.NewWithStore(nil, mockStore)
+		err := v.Subscribe(mockConn, "test-topic")
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("TestCustomStore_WhenBroadcasting_ThenShouldUseCustomStore", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock.NewMockStore(ctrl)
+		mockConn1 := mock.NewMockConnection(ctrl)
+		mockConn2 := mock.NewMockConnection(ctrl)
+
+		data := []byte("test message")
+		connections := []varto.Connection{mockConn1, mockConn2}
+
+		mockStore.EXPECT().GetAllConnections().Return(connections, nil)
+		mockConn1.EXPECT().Write(data).Return(nil)
+		mockConn2.EXPECT().Write(data).Return(nil)
+
+		v := varto.NewWithStore(nil, mockStore)
+		err := v.BroadcastToAll(data)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("TestCustomStore_WhenPublishing_ThenShouldUseCustomStore", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockStore := mock.NewMockStore(ctrl)
+		mockTopic := mock.NewMockTopic(ctrl)
+
+		data := []byte("test message")
+		mockStore.EXPECT().GetTopic("test-topic").Return(mockTopic, nil)
+		mockTopic.EXPECT().Publish(data)
+
+		v := varto.NewWithStore(nil, mockStore)
+		err := v.Publish("test-topic", data)
+
+		assert.Nil(t, err)
 	})
 }

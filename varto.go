@@ -15,7 +15,7 @@ func getDefaultOptions() *Options {
 
 // Varto is the main struct of the package.
 type Varto struct {
-	store             *inMemoryStore
+	store             Store
 	opts              *Options
 	allowedTopics     map[string]bool
 	middlewareContext *middlewareContext
@@ -24,8 +24,13 @@ type Varto struct {
 // New returns a new Varto instance.
 // If opts is nil, default options will be used.
 func New(opts *Options) *Varto {
+	return NewWithStore(opts, newInMemoryStore())
+}
+
+// NewWithStore creates a new Varto instance with a custom store implementation.
+func NewWithStore(opts *Options, store Store) *Varto {
 	v := &Varto{
-		store:             newInMemoryStore(),
+		store:             store,
 		middlewareContext: newMiddlewareContext(),
 	}
 
